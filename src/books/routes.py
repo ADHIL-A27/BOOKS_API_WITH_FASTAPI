@@ -18,27 +18,38 @@ role_checker = RoleChecker(['admin','user'])
 async def get_all_books(
 
     session: AsyncSession = Depends(get_session),
-    user_details=Depends(access_token_bearer),
+    token_details : dict=Depends(access_token_bearer),
     
 
 ):
-    
-    print("####################")
-    print(user_details)
 
     books = await book_service.get_all_books(session)
     return books
 
 
+
+@book_router.get(
+    "/user/{user_uid}", response_model=List[Book], dependencies=[Depends(role_checker)]
+)
+async def get_user_book_submissions(
+    user_uid: str,
+    session: AsyncSession = Depends(get_session),
+    _: dict = Depends(access_token_bearer),
+):
+    books = await book_service.get_user_books(user_uid, session)
+    return books
+
+
 @book_router.post('/', status_code=status.HTTP_201_CREATED, response_model=Book)
 
-async def create_book(
+async def create_a_book(
     book_data: BookCreateModel, session: AsyncSession = Depends(get_session),
-    user_details=Depends(access_token_bearer),
+    token_details : dict=Depends(access_token_bearer),
     dependencies=[Depends(role_checker)]
  ) -> dict:
     
-    new_book = await book_service.create_book(book_data, session)
+    user_id = token_details.get('user')['user_uid']
+    new_book = await book_service.create_book(book_data,user_id,session)
     return new_book
 
 
@@ -46,7 +57,7 @@ async def create_book(
 async def get_book(
 
     book_uid: str, session: AsyncSession = Depends(get_session),
-    user_details=Depends(access_token_bearer),
+    token_details : dict=Depends(access_token_bearer),
     dependencies=[Depends(role_checker)]
 ) -> dict:
     book = await book_service.get_book(book_uid, session)
@@ -62,7 +73,7 @@ async def get_book(
 async def update_book(
 
     book_uid: str, book_update_data: BookUpdateModel, session: AsyncSession = Depends(get_session),
-    user_details=Depends(access_token_bearer)
+    token_details : dict=Depends(access_token_bearer)
 
 ) -> dict:
 
@@ -79,7 +90,7 @@ async def update_book(
 async def delete_book(
 
     book_uid: str, session: AsyncSession = Depends(get_session),
-    user_details=Depends(access_token_bearer)
+    token_details : dict=Depends(access_token_bearer)
 
 ):
    
