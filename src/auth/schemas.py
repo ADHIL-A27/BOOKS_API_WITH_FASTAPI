@@ -1,6 +1,7 @@
 from pydantic import BaseModel,Field
 import uuid
 from src.books.schemas import Book
+from src.reviews.schemas import ReviewModel
 from typing import List
 from datetime import datetime
 
@@ -27,6 +28,7 @@ class UserModel(BaseModel):
     
 class UserBooksModel(UserModel):
     books: List[Book]
+    reviews: List[ReviewModel]
 
 class UserLoginModel(BaseModel):
     email: str = Field(max_length=40)
