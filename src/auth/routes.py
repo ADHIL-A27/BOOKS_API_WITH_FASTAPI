@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from .schemas import UserCreateModel, UserModel, UserLoginModel,UserBooksModel
+from .schemas import UserCreateModel, UserModel, UserLoginModel,UserBooksModel,EmailModel
 from .service import UserService
 from src.db.main import get_session
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,6 +7,7 @@ from fastapi.exceptions import HTTPException
 from .utils import create_acess_token, decode_token, verify_password
 from fastapi.responses import JSONResponse
 from datetime import timedelta,datetime
+from src.mail import mail,create_message
 from . dependencies import RefreshTokenBearer,AccessTokenBearer,get_current_user,RoleChecker
 from src.db.redis import add_jti_to_blocklist
 
@@ -17,6 +18,22 @@ role_checker = RoleChecker(['admin','user'])
 
 REFRESH_TOKEN_EXPIRY = 2
 
+
+@auth_router.post("/send_mail")
+async def send_mail(emails: EmailModel):
+    emails = emails.addresses
+
+    html = "<h1>Welcome to the app</h1>"
+
+    subject = "Welcome to our app"
+
+    message = create_message(
+        recipients=emails,
+        subject=subject,
+        body=html
+    )
+    await mail.send_message(message)
+    return {"message": "Email sent successfully"}
 
 @auth_router.post(
     '/signup',
