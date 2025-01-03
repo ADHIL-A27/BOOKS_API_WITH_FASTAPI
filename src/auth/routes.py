@@ -30,13 +30,11 @@ from .utils import (
     generate_passwd_hash,
     create_url_safe_token,
     decode_url_safe_token,
-    
 )
 from src.errors import UserAlreadyExists, UserNotFound, InvalidCredentials, InvalidToken
 from src.config import Config
-from src.mail import mail,create_message
 from src.db.main import get_session
-
+from src.celery_tasks import send_email
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -49,20 +47,14 @@ REFRESH_TOKEN_EXPIRY = 2
 # Bearer Token
 
 
-@auth_router.post("/send_mail") 
+@auth_router.post("/send_mail")
 async def send_mail(emails: EmailModel):
     emails = emails.addresses
 
     html = "<h1>Welcome to the app</h1>"
     subject = "Welcome to our app"
 
-    message = create_message(
-        recipients=emails,
-        subject=subject,
-        body=html
-    )
-
-    await mail.send_message(message)
+    send_email.delay(emails, subject, html)
 
     return {"message": "Email sent successfully"}
 
@@ -70,6 +62,7 @@ async def send_mail(emails: EmailModel):
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def create_user_Account(
     user_data: UserCreateModel,
+    bg_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
     """
@@ -99,13 +92,7 @@ async def create_user_Account(
 
     subject = "Verify Your email"
 
-    message = create_message(
-        recipients=emails,
-        subject=subject,
-        body=html
-    )
-     
-    await mail.send_message(message)
+    send_email.delay(emails, subject, html)
 
     return {
         "message": "Account Created! Check email to verify your account",
@@ -223,13 +210,7 @@ async def password_reset_request(email_data: PasswordResetRequestModel):
     """
     subject = "Reset Your Password"
 
-    message = create_message(
-        recipients=[email],
-        subject=subject,
-        body=html_message
-    )
-     
-    await mail.send_message(message)
+    send_email.delay([email], subject, html_message)
     return JSONResponse(
         content={
             "message": "Please check your email for instructions to reset your password",
