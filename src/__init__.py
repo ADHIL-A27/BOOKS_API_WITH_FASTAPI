@@ -26,7 +26,7 @@ app = FastAPI(
     license_info={"name": "MIT License", "url": "https://opensource.org/license/mit"},
     contact={
         "name": "MOHAMMED ADHIL",
-        # "url": "https://github.com/jod35",
+        # "url": "https://github.com/ADHIL_A27",
         "email": "adilu2263@gmail.com",
     },
     terms_of_service="httpS://example.com/tos",
